@@ -44,6 +44,7 @@ export async function POST(request: Request) {
 
     try {
         const { userName, email, password } = await request.json();
+          const verifyCode = Math.floor(10000 + Math.random() * 9000).toString()
 
         const existingUserVerifyedByUser = await UserModel.find({ userName, isVerified: true })
 
@@ -57,9 +58,20 @@ export async function POST(request: Request) {
         const existingUserByEmail = await UserModel.findOne({ email })
         if (existingUserByEmail) {
 
+            if(existingUserByEmail.isVerified)
+            {
+                 return Response.json({ success: false, message: "User already exist" }, { status: 500 });
+            }else{
+                const hashedPassword = await bcrypt.hash(password, 100);
+                existingUserByEmail.password = hashedPassword;
+                existingUserByEmail.verifiedCode = verifyCode
+                existingUserByEmail.verifiedCodeExpiry = new Date(Date.now() + 360000)
+                await existingUserByEmail.save()
+            }
+
         }
         else {
-            const verifyCode = Math.floor(10000 + Math.random() * 9000).toString()
+          
             const hashedPassword = await bcrypt.hash(password, 10)
             const expiryDate = new Date()
 
