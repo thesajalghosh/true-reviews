@@ -33,18 +33,47 @@ export const authOptions: NextAuthOptions = {
                         throw new Error('Please verify your account first')
                     }
 
-                 const isPasswordCurrect =   await bcrypt.compare(credentials.password, findUser.password)
+                    const isPasswordCurrect = await bcrypt.compare(credentials.password, findUser.password)
 
-                 if(isPasswordCurrect){
-                     return findUser
-                 }else {
-                    throw new Error('incurrect password')
-                 }
+                    if (isPasswordCurrect) {
+                        return findUser
+                    } else {
+                        throw new Error('incurrect password')
+                    }
 
                 } catch (error) {
                     throw new Error()
                 }
             }
         })
-    ]
+    ],
+    callbacks: {
+        async jwt({ token, user }) {
+            if(user){
+                token._id = user._id?.toString()
+                token.isVerified= user.isVerified
+                token.isAcceptingMessage = user.isAcceptingMessage,
+                token.userName = user.userName
+
+
+            }
+            return token
+        },
+        async session({ session, token }) {
+            session.user._id = token._id
+            session.user.isVerified = token.isVerified
+            session.user.isAcceptingMessage = token.isAcceptingMessage
+            session.user.userName = token.userName
+            return session
+        },
+
+
+    },
+    pages: {
+        signIn: '/sign-in'
+    },
+    session: {
+        strategy: "jwt"
+    },
+    secret: process.env.NEXTAUTH_SECRET
 }
